@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Dashboard - RuralTrade Connect</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h2>Analytics Dashboard</h2>
+  <div>
+    <button id="logout">Logout</button>
+  </div>
+
+  <h3>Overview</h3>
+  <div id="overview"></div>
+
+  <h3>Sales by Artisan</h3>
+  <canvas id="salesChart" width="600" height="300"></canvas>
+
+  <script>
+    const token = localStorage.getItem('rtc_token');
+    if (!token) {
+      alert('Please login');
+      location.href = 'login.html';
+    }
+
+    document.getElementById('logout').addEventListener('click', () => {
+      localStorage.removeItem('rtc_token');
+      localStorage.removeItem('rtc_role');
+      window.location.href = 'login.html';
+    });
+
+    async function loadOverview() {
+      const res = await fetch('http://localhost:5000/api/analytics/overview', {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      const data = await res.json();
+      document.getElementById('overview').innerText = JSON.stringify(data);
+    }
+
+    async function loadSalesChart() {
+      const res = await fetch('http://localhost:5000/api/analytics/sales-by-artisan', {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      const rows = await res.json();
+      const labels = rows.map(r => r.artisan);
+      const values = rows.map(r => Number(r.total_sales) || 0);
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ label: 'Total Sales', data: values }]
+        },
+        options: {}
+      });
+    }
+
+    loadOverview();
+    loadSalesChart();
+  </script>
+</body>
+</html>
